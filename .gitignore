@@ -1,3 +1,4 @@
-env
+.env
 prueba.txt
 node_modules
+.vscode
