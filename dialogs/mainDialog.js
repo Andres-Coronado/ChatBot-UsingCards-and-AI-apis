@@ -5,8 +5,7 @@ const { AttachmentLayoutTypes, CardFactory, MessageFactory } = require('botbuild
 const { ChoicePrompt, ChoiceFactory, ListStyle, ComponentDialog, DialogSet, DialogTurnStatus, WaterfallDialog, TextPrompt } = require('botbuilder-dialogs');
 // const readline = require('readline-sync');
 
-const settings = require('../appSettings');
-const graphHelper = require('../helpers/graphHelper');
+const authGraph = require('../helpers/authGraph');
 const MAIN_WATERFALL_DIALOG = 'mainWaterfallDialog';
 const TEXT_PROMPT = 'TEXT_PROMPT';
 
@@ -62,7 +61,7 @@ class MainDialog extends ComponentDialog {
             // choices: this.getChoices()
             choices: ChoiceFactory.toChoices(
                 [
-                    'Graph',
+                    'My Info Graph',
                     'Cognitive Services',
                     'AI',
                     'Translate',
@@ -93,13 +92,12 @@ class MainDialog extends ComponentDialog {
         // case 'Adaptive Card':
         //     await stepContext.context.sendActivity({ attachments: [this.createAdaptiveCard()] });
         //     break;
-        case 'Graph':
+        case 'My Info Graph':
             await this.getMyInfo(stepContext);
             break;
         case 'Cognitive Services':
             await stepContext.context.sendActivity('Cognitive Services');
             break;
-  
         default:
             await stepContext.context.sendActivity('a');
             break;
@@ -115,30 +113,7 @@ class MainDialog extends ComponentDialog {
     // ======================================
     async getMyInfo(step) {
         // Initialize Graph
-        initializeGraph(settings); function initializeGraph(settings) {
-            graphHelper.initializeGraphForUserAuth(settings, async (info) => {
-            // Display the device code message to
-            // the user. This tells them
-            // where to go to sign in and provides the
-            // code to use.
-                console.log(info.message);
-                const card = CardFactory.heroCard(
-                    'OAuth authentication',
-                    CardFactory.images(['https://sec.ch9.ms/ch9/7ff5/e07cfef0-aa3b-40bb-9baa-7c9ef8ff7ff5/buildreactionbotframework_960.jpg']),
-                    CardFactory.actions([
-                        {
-                            type: 'openUrl',
-                            title: 'Go to Page',
-                            value: 'https://microsoft.com/devicelogin'
-                        }
-                    ])
-                );
-                const msg = MessageFactory.attachment(card);
-                await step.context.sendActivity('Please enter the next code');
-                await step.context.sendActivity(info.userCode);
-                await step.context.sendActivity(msg);
-            });
-        }
+        await authGraph.authentication(step);
         // Get usr info
         await getUserInfoHelper.getUserInfoHelper(step);
     }
