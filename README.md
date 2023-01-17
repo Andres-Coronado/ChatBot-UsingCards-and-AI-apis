@@ -1,6 +1,6 @@
 # Using Cards
 
-Bot Framework v4 using cards bot sample
+Bot Framework v4 using adaptive cards, graph and Cognitive services 
 
 This bot has been created using [Bot Framework](https://dev.botframework.com), it shows how to create a bot that uses rich cards to enhance your bot design.
 
@@ -18,13 +18,13 @@ This bot has been created using [Bot Framework](https://dev.botframework.com), i
 - Clone the repository
 
     ```bash
-    git clone https://github.com/microsoft/botbuilder-samples.git
+    git clone https://github.com/Andres-Coronado/ChatBot-UsingCards-and-AI-apis.git
     ```
 
-- In a terminal, navigate to `samples/javascript_nodejs/06.using-cards`
+- In a terminal, navigate to `ChatBot-UsingCards-and-AI-apis`
 
     ```bash
-    cd samples/javascript_nodejs/06.using-cards
+    cd ChatBot-UsingCards-and-AI-apis
     ```
 
 - Install modules
@@ -51,19 +51,8 @@ This bot has been created using [Bot Framework](https://dev.botframework.com), i
 - File -> Open Bot
 - Enter a Bot URL of `http://localhost:3978/api/messages`
 
-## Interacting with the bot
 
-Most channels support rich content.  In this sample we explore the different types of rich cards your bot may use.  A key to good bot design is to send interactive media, such as Rich Cards. There are several different types of Rich Cards, which are as follows:
 
-- Animation Card
-- Audio Card
-- Hero Card
-- Receipt Card
-- Sign In Card
-- Thumbnail Card
-- Video Card
-
-When [designing the user experience](https://docs.microsoft.com/en-us/azure/bot-service/bot-service-design-user-experience?view=azure-bot-service-4.0#cards) developers should consider adding visual elements such as Rich Cards.
 
 ## Deploy the bot to Azure
 
