@@ -1,26 +1,37 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const { AttachmentLayoutTypes, CardFactory, MessageFactory } = require('botbuilder');
 const { ChoicePrompt, ChoiceFactory, ListStyle, ComponentDialog, DialogSet, DialogTurnStatus, WaterfallDialog, TextPrompt } = require('botbuilder-dialogs');
 // const readline = require('readline-sync');
 
 const authGraph = require('../helpers/authGraph');
 const MAIN_WATERFALL_DIALOG = 'mainWaterfallDialog';
 const TEXT_PROMPT = 'TEXT_PROMPT';
-
+const COGNITIVE_SERVICES = 'COGNITIVE_SERVICES';
+const COGNITIVE_SERVICES_API = 'COGNITIVE_SERVICES_API';
 const getUserInfoHelper = require('../helpers/getUserInfoHelper');
+const CHOICE_PROMPT = 'CHOICE_PROMPT';
 
 class MainDialog extends ComponentDialog {
     constructor() {
         super('MainDialog');
 
         // Define the main dialog and its related components.
-        this.addDialog(new ChoicePrompt('cardPrompt'));
+        this.addDialog(new ChoicePrompt('CHOICE_PROMPT'));
         this.addDialog(new TextPrompt(TEXT_PROMPT));
         this.addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
             this.choiceCardStep.bind(this),
             this.showCardStep.bind(this)
+        ]));
+        this.addDialog(new WaterfallDialog(COGNITIVE_SERVICES, [
+            this.choiceCognitiveService.bind(this),
+            this.userServiceSelected.bind(this)
+            // this.comsumeApi.bind(this)
+        ]));
+
+        this.addDialog(new WaterfallDialog(COGNITIVE_SERVICES_API, [
+            this.useApiService.bind(this),
+            this.comsumeApi.bind(this)
         ]));
 
         // The initial child Dialog to run.
@@ -63,12 +74,6 @@ class MainDialog extends ComponentDialog {
                 [
                     'My Info Graph',
                     'Cognitive Services',
-                    'AI',
-                    'Translate',
-                    'LUIS',
-                    'QNA',
-                    'Bloob',
-                    'Azure',
                     'Otro'
                 ]
             ),
@@ -77,7 +82,7 @@ class MainDialog extends ComponentDialog {
         };
 
         // Prompt the user with the configured PromptOptions.
-        return await stepContext.prompt('cardPrompt', options);
+        return await stepContext.prompt('CHOICE_PROMPT', options);
     }
 
     /**
@@ -96,8 +101,8 @@ class MainDialog extends ComponentDialog {
             await this.getMyInfo(stepContext);
             break;
         case 'Cognitive Services':
-            await stepContext.context.sendActivity('Cognitive Services');
-            break;
+            await stepContext.endDialog();
+            return await stepContext.replaceDialog(COGNITIVE_SERVICES);
         default:
             await stepContext.context.sendActivity('a');
             break;
@@ -116,6 +121,115 @@ class MainDialog extends ComponentDialog {
         await authGraph.authentication(step);
         // Get usr info
         await getUserInfoHelper.getUserInfoHelper(step);
+    }
+
+    // Cognitive Services
+    async choiceCognitiveService(stepContext) {
+        console.log('COGNITIVE_SERVICES.choiceCognitiveServices');
+
+        // Create the PromptOptions which contain the prompt and re-prompt messages.
+        // PromptOptions also contains the list of choices available to the user.
+        const options = {
+            prompt: 'What cognitive services would you like to try?',
+            retryPrompt: 'That was not a valid choice',
+            // choices: this.getChoices()
+            choices: ChoiceFactory.toChoices(
+                [
+                    'EntityLinking',
+                    'EntityRecognition',
+                    'KeyPhraseExtraction',
+                    'LanguageDetection',
+                    'PiiEntityRecognition',
+                    'SentimentAnalysis',
+                    'Otro'
+                ]
+            ),
+            style: ListStyle.buttons
+
+        };
+
+        // Prompt the user with the configured PromptOptions.
+        return await stepContext.prompt('CHOICE_PROMPT', options);
+    }
+
+    async userServiceSelected(step) {
+        console.log('COGNITIVE_SERVICES.userServiceSelected');
+
+        switch (step.result.value) {
+        case 'EntityLinking':
+            await step.endDialog();
+            return await step.replaceDialog('COGNITIVE_SERVICES_API', step.result.value);
+        case 'EntityRecognition':
+            await step.endDialog();
+            return await step.replaceDialog('COGNITIVE_SERVICES_API', step.result.value);
+        case 'KeyPhraseExtraction':
+            await step.endDialog();
+            return await step.replaceDialog('COGNITIVE_SERVICES_API', step.result.value);
+        case 'LanguageDetection':
+            await step.endDialog();
+            return await step.replaceDialog('COGNITIVE_SERVICES_API', step.result.value);
+        case 'PiiEntityRecognition':
+            await step.endDialog();
+            return await step.replaceDialog('COGNITIVE_SERVICES_API', step.result.value);
+        case 'SentimentAnalysis':
+            await step.endDialog();
+            return await step.replaceDialog('COGNITIVE_SERVICES_API', step.result.value);
+
+        default:
+            await step.context.sendActivity('a');
+
+            break;
+        }
+        return await step.replaceDialog(MAIN_WATERFALL_DIALOG);
+    }
+
+    async useApiService(step) {
+        console.log('useApiServ');
+        return await step.prompt(TEXT_PROMPT, 'Write the text to analyze');
+    }
+
+    async comsumeApi(step) {
+        console.log('comsumeApi');
+        const textRecived = step.result;
+        const serviceSelected = step.stack[0].state.options;
+
+        var axios = require('axios');
+        var data = JSON.stringify({
+            kind: serviceSelected,
+            parameters: {
+                modelVersion: 'latest'
+            },
+            analysisInput: {
+                documents: [
+                    {
+                        id: '1',
+                        text: textRecived
+                    }
+
+                ]
+            }
+        });
+
+        var config = {
+            method: 'post',
+            url: `${ process.env.Cognitive_Services_Endpoint }/language/:analyze-text?api-version=2022-05-01`,
+            headers: {
+                'Ocp-Apim-Subscription-Key': process.env.Cognitive_Services_Key,
+                'Content-Type': 'application/json'
+            },
+            data: data
+        };
+
+        const res = await axios(config)
+            .then(function(response) {
+                return JSON.stringify(response.data);
+            })
+            .catch(function(error) {
+                console.log(error);
+            });
+
+        step.context.sendActivity(res);
+        return await step.replaceDialog(MAIN_WATERFALL_DIALOG);
     }
 }
 
